@@ -16,7 +16,7 @@ An illustration of using NPMT in German-English translation
 ![Example](de-en_example.png)
 
 
-Please refer to the [PR](TBD) for our implementations. Our implementation is based on the [lastest version](https://github.com/posenhuang/NPMT/commit/7d017f0a46a3cddfc420a4778d9541ba38b6a43d) of fairseq.  
+Please refer to the [PR](https://github.com/posenhuang/NPMT/pull/1) for our implementations. Our implementation is based on the [lastest version](https://github.com/posenhuang/NPMT/commit/7d017f0a46a3cddfc420a4778d9541ba38b6a43d) of fairseq.  
 
 
 # Citation
