@@ -121,13 +121,13 @@ Here a few example settings that work well for the IWSLT14, IWSLT15 datasets:
 # NPMT model (IWSLT DE-EN)
 $ mkdir -p trainings/iwslt_de_en
 $ fairseq train -sourcelang de -targetlang en -datadir data-bin/iwslt14.tokenized.de-en \
-  -sourcelang de -targetlang en -model npmt -nhid 256 -dec_unit_size 512 -dropout .5 \
-  -dropout_hid 0 -npmt_dropout .5 -optim adam -lr 0.001 -batchsize 32 -log_interval 100 \
-  -nlayer 2 -nenclayer 2 -kwidth 7 -max_segment_len 6 -rnn_mode GRU -group_size 500 \
-  -use_resnet_enc -use_resnet_dec -log -momentum 0.99 -clip 10 -maxbatch 600 -bptt 0 \
-  -maxepoch 100 -ndatathreads 4 -seed 1002 -maxsourcelen 75 -num_lower_win_layers 1 \
-  -save_interval 250 -use_accel -noearlystop -validbleu -lrshrink 1.25 -minepochtoanneal 18 \
-  -annealing_type slow -savedir trainings/iwslt_de_en
+  -model npmt -nhid 256 -dec_unit_size 512 -dropout .5 dropout_hid 0 -npmt_dropout .5 \
+  -optim adam -lr 0.001 -batchsize 32 -log_interval 100 nlayer 2 -nenclayer 2 -kwidth 7 \
+  -max_segment_len 6 -rnn_mode GRU -group_size 500 -use_resnet_enc -use_resnet_dec -log
+  -momentum 0.99 -clip 10 -maxbatch 600 -bptt 0 -maxepoch 100 -ndatathreads 4 -seed 1002 
+  -maxsourcelen 75 -num_lower_win_layers 1 -save_interval 250 -use_accel -noearlystop \
+  -validbleu -lrshrink 1.25 -minepochtoanneal 18 -annealing_type slow \
+  -savedir trainings/iwslt_de_en
 
 # NPMT model (IWSLT EN-DE)
 $ mkdir -p trainings/iwslt_en_de
