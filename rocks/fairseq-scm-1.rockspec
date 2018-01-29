@@ -1,7 +1,7 @@
 package = 'fairseq'
 version = 'scm-1'
 source = {
-  url = 'git://github.com/facebookresearch/fairseq',
+  url = 'git://github.com:posenhuang/NPMT.git',
   tag = 'master',
 }
 description = {

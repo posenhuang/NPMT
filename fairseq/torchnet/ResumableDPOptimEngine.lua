@@ -5,6 +5,9 @@
 -- the root directory of this source tree. An additional grant of patent rights
 -- can be found in the PATENTS file in the same directory.
 --
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- Licensed under the BSD License.
+--
 --[[
 --
 -- A version of OptimEngine that implements data parallelism and
@@ -16,7 +19,7 @@ local tnt = require 'torchnet'
 local argcheck = require 'argcheck'
 local utils = require 'fairseq.utils'
 local threads = require 'threads'
-
+local mutils = require 'fairseq.models.utils'
 local cuda = utils.loadCuda()
 
 local ResumableDPOptimEngine =
@@ -215,10 +218,24 @@ ResumableDPOptimEngine.test = argcheck{
                             _G.prepareSample(sample)
                             _G.model:resizeCriterionWeights(
                                 _G.criterion, _G.critweights, sample)
+                            -- HACK for not having OOM
+                            local group_size
+                            if torch.typename(_G.model) == 'NPMTModel' then
+                                local npmt = mutils.findAnnotatedNode(_G.model:network(), 'npmt')
+                                group_size = npmt.group_size
+                                npmt.group_size = 64
+                            end
                             local net = _G.model:network()
                             local crit = _G.criterion
                             net:forward(sample.input)
                             crit:forward(net.output, sample.target)
+                            if torch.typename(_G.model) == 'NPMTModel' then
+                                local npmt = mutils.findAnnotatedNode(_G.model:network(), 'npmt')
+                                npmt.group_size = group_size
+                                npmt:clearState()
+                                _G.model:network():clearState()
+                            end
+                            collectgarbage()
                             collectgarbage()
                             return crit.output
                         end,
@@ -350,7 +367,7 @@ ResumableDPOptimEngine.doTrain = argcheck{
                         if sample then
                             state.ntokens = state.ntokens + sample.ntokens
                             self.pool:addjob(shardid,
-                                function(optconfig, sample, clipv, prevn)
+                                function(optconfig, sample, clipv, prevn, epoch)
                                     -- Clip gradients and update parameters.
                                     -- Note: this is being done for the
                                     -- previous sample.
@@ -362,7 +379,6 @@ ResumableDPOptimEngine.doTrain = argcheck{
                                         optconfig.method(_G.feval, _G.params,
                                             optconfig, _G.optstate)
                                     end
-
                                     -- Process the current sample.
                                     _G.prepareSample(sample)
                                     _G.model:resizeCriterionWeights(
@@ -378,13 +394,14 @@ ResumableDPOptimEngine.doTrain = argcheck{
                                     crit:backward(net.output, sample.target)
                                     net:backward(sample.input, crit.gradInput)
                                     collectgarbage()
+                                    collectgarbage()
                                     return crit.output
                                 end,
                                 function(loss)
                                     state.loss = state.loss + loss
                                 end,
                                 state.epoch_t > 0 and state.optconfig or nil,
-                                    sample, clipv, prevn
+                                    sample, clipv, prevn, state.epoch
                             )
                         end
                     end

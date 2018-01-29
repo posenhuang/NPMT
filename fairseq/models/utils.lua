@@ -5,6 +5,9 @@
 -- the root directory of this source tree. An additional grant of patent rights
 -- can be found in the PATENTS file in the same directory.
 --
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- Licensed under the BSD License.
+--
 --[[
 --
 -- Shared utility functions used for model construction.
@@ -111,6 +114,11 @@ function mutils.loadLegacyModel(path, typename)
     model.module = torch.load(path)
     return model
 end
+
+function mutils.loadModel(path, typename)
+    return torch.load(path)
+end
+
 
 function mutils.sendtobuf(data, buffer)
     assert(data and torch.isTensor(data))

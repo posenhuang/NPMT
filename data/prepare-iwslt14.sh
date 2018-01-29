@@ -57,7 +57,10 @@ for l in $src $tgt; do
     perl $TOKENIZER -threads 8 -l $l > $tmp/$tok
     echo ""
 done
-perl $CLEAN -ratio 1.5 $tmp/train.tags.$lang.tok $src $tgt $tmp/train.tags.$lang.clean 1 175
+
+# Only use up to 50 as in https://github.com/facebookresearch/MIXER/blob/master/prepareData.sh
+#  and https://github.com/rizar/actor-critic-public
+perl $CLEAN -ratio 1.5 $tmp/train.tags.$lang.tok $src $tgt $tmp/train.tags.$lang.clean 1 50
 for l in $src $tgt; do
     perl $LC < $tmp/train.tags.$lang.clean.$l > $tmp/train.tags.$lang.$l
 done
