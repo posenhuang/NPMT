@@ -5,6 +5,9 @@
 -- the root directory of this source tree. An additional grant of patent rights
 -- can be found in the PATENTS file in the same directory.
 --
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- Licensed under the BSD License.
+--
 --[[
 --
 -- Common torchnet engine hooks. The general format for functions declared
@@ -185,11 +188,16 @@ hooks.runGeneration = argcheck{
             local scorer = clib.bleu(dict:getPadIndex(), dict:getEosIndex())
             local fp = outfile and io.open(outfile, 'a')
             local targetBuf = torch.IntTensor()
+            local output_counts, num_segments = 0, 0
             for samples in iterator() do
                 -- We don't shard generation
                 computeSampleStats({samples = samples})
                 local sample = samples[1]
-                local hypos, scores, attns, _ = generate(model, sample)
+                local hypos, scores, attns, _, output_count, num_segment = generate(model, sample)
+                if output_count and num_segment then
+                    output_counts = output_counts + output_count
+                    num_segments = num_segments + num_segment
+                end
                 local targetTT = sample.target:t()
                 local targetT = targetBuf:resizeAs(targetTT):copy(targetTT)
                 local beam = #hypos / sample.bsz
@@ -233,7 +241,9 @@ hooks.runGeneration = argcheck{
                     scorer:add(ref, hypo:int())
                 end
             end
-
+            if num_segments > 0 then
+                print(string.format("avg. phrase size %f", output_counts / num_segments))
+            end
             if fp then
                 fp:close()
             end
@@ -263,6 +273,7 @@ hooks.onCheckpoint = argcheck{
                     isAnnealing = false,
                     prevvalloss = nil,
                     bestvalloss = nil,
+                    bestvalbleu = nil,
                 }
             end
 
@@ -293,8 +304,8 @@ hooks.onCheckpoint = argcheck{
             stats['wordspersec'] = lossMeter.n / cptime
             stats['current_lr'] = state.optconfig.learningRate * config.lrscale
 
-            local loss = lossMeter:value() / math.log(2)
-            local ppl = math.pow(2, loss)
+            local loss = lossMeter:value()
+            local ppl = math.min(math.pow(2, loss / math.log(2)), 1000) -- Hack
             print(string.format(
                 '%s | trainloss %8.2f | train ppl %8.2f',
                 logPrefix, loss, ppl)
@@ -308,8 +319,8 @@ hooks.onCheckpoint = argcheck{
             for name, set in pairs(testsets) do
                 meter:reset()
                 runTest(state, set, meter)
-                local loss = meter:value() / math.log(2)
-                local ppl = math.pow(2, loss)
+                local loss = meter:value()
+                local ppl = math.pow(2, loss / math.log(2))
                 str2print = string.format('%s | %sloss %8.2f | %s ppl %8.2f',
                     str2print, name, loss, name, ppl)
                 stats[name .. 'ppl'] = ppl
@@ -351,6 +362,7 @@ hooks.onCheckpoint = argcheck{
 
 
             local valloss = stats['validloss']
+            local valbleu = stats['validbleu']
 
             -- Save model and best model
             if not config.nosave then
@@ -374,6 +386,19 @@ hooks.onCheckpoint = argcheck{
                     state._onCheckpoint.bestvalloss = valloss
                 end
 
+                if valbleu
+                        and (not state._onCheckpoint.bestvalbleu
+                        or valbleu > state._onCheckpoint.bestvalbleu) then
+                    local bestmodelpath = plpath.join(config.savedir,
+                        'model_bestbleu.th7')
+                    if utils.retry(3, engine.saveModel, engine, bestmodelpath)
+                    then
+                        print(string.format(
+                            '%s | saved new best bleu model to %s', logPrefix,
+                            bestmodelpath))
+                    end
+                    state._onCheckpoint.bestvalbleu = valbleu
+                end
             end
             io.stdout:flush()
 

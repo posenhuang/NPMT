@@ -5,6 +5,9 @@
 -- the root directory of this source tree. An additional grant of patent rights
 -- can be found in the PATENTS file in the same directory.
 --
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- Licensed under the BSD License.
+--
 --[[
 --
 -- This model closely follows the conditional setup of rnn-lib v1, with -name
@@ -101,7 +104,7 @@ AvgpoolModel.makeAttention = argcheck{
         local encoderOutPooled, encoderOutSingle = encoderOut:split(2)
 
         -- Projection of previous hidden state onto source word space
-        local prevhProj = nn.Linear(config.nhid, config.nembed)(prevh)
+        local prevhProj = nn.Linear(config.dec_unit_size, config.nembed)(prevh)
         local decoderRep = nn.CAddTable()({prevhProj, input})
 
         -- Compute scores (usually denoted with alpha) using a simple dot
@@ -148,7 +151,7 @@ AvgpoolModel.makeDecoderRNN = argcheck{
         local rnn = nn.CLSTM{
             attention = attnmodule,
             inputsize = config.nembed,
-            hidsize = config.nhid,
+            hidsize = config.dec_unit_size,
             nlayer = config.nlayer,
             winitfun = function(network)
                 rmutils.defwinitfun(network, config.init_range)
@@ -171,8 +174,8 @@ AvgpoolModel.makeDecoderRNN = argcheck{
         end
 
         local scaleHidden = nn.Identity()
-        if config.nhid ~= config.nembed then
-            scaleHidden = nn.Linear(config.nhid, config.nembed)
+        if config.dec_unit_size ~= config.nembed then
+            scaleHidden = nn.Linear(config.dec_unit_size, config.nembed)
         end
 
         local decoderRNNOut = scaleHidden(

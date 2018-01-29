@@ -5,6 +5,9 @@
 -- the root directory of this source tree. An additional grant of patent rights
 -- can be found in the PATENTS file in the same directory.
 --
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- Licensed under the BSD License.
+--
 --[[
 --
 -- Hypothesis generation script with text file input, processed line-by-line.
@@ -51,6 +54,8 @@ cmd:option('-freqthreshold', -1,
     'the minimum frequency for an alignment candidate in order' ..
     'to be considered (default no limit)')
 cmd:option('-fconvfast', false, 'make fconv model faster')
+cmd:option('-lm_weight', 0.0, 'external lm weight.')
+cmd:option('-lm_path', "", 'external lm path.')
 
 local config = cmd:parse(arg)
 
@@ -61,6 +66,13 @@ config.dict = torch.load(config.targetdict)
 print(string.format('| [target] Dictionary: %d types',  config.dict:size()))
 config.srcdict = torch.load(config.sourcedict)
 print(string.format('| [source] Dictionary: %d types',  config.srcdict:size()))
+
+if config.lm_weight > 0 and config.lm_path:len() > 0 then
+--    os.execute('./compile_lm.sh')
+    require "lua_lm"
+    config['lm'] = create_lm_instance(config.lm_path)
+end
+
 
 if config.aligndictpath ~= '' then
     config.aligndict = tnt.IndexedDatasetReader{
@@ -145,7 +157,9 @@ local dataset = tnt.DatasetIterator{
 }
 
 local model
-if config.model ~= '' then
+if config.model == 'npmt' then
+    model = mutils.loadModel(config.path, config.model)
+elseif config.model ~= '' then
     model = mutils.loadLegacyModel(config.path, config.model)
 else
     model = require(
@@ -215,7 +229,15 @@ until dict:getIndex(runk) == dict:getUnkIndex()
 
 for sample in dataset() do
     sample.bsz = 1
-    local hypos, scores, attns = model:generate(config, sample, searchf)
+    local hypos, scores, attns, t, num_counts, num_segments
+    if config.model == 'npmt' then
+        -- TODO fetch reordering layer weights
+        config.verbose = true
+        hypos, scores, attns, t, num_counts, num_segments = model:generate(config, sample, searchf)
+        print(string.format("avg. phrase size %f", num_counts / num_segments))
+    else
+        hypos, scores, attns, t = model:generate(config, sample, searchf)
+    end
 
     -- Print results
     local sourceString = config.srcdict:getString(sample.source:t()[1])

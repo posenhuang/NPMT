@@ -5,6 +5,9 @@
 -- the root directory of this source tree. An additional grant of patent rights
 -- can be found in the PATENTS file in the same directory.
 --
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- Licensed under the BSD License.
+--
 --[[
 --
 -- Batch hypothesis generation script.
@@ -61,6 +64,10 @@ cmd:option('-freqthreshold', -1,
     'the minimum frequency for an alignment candidate in order' ..
     'to be considered (default no limit)')
 cmd:option('-fconvfast', false, 'make fconv model faster')
+cmd:option('-lm_weight', 0.0, 'external lm weight.')
+cmd:option('-lm_path', "", 'external lm path.')
+cmd:option('-verbose', false, 'True print test_mode details')
+
 
 local cuda = utils.loadCuda()
 
@@ -69,6 +76,14 @@ torch.manualSeed(config.seed)
 if cuda.cutorch then
     cutorch.manualSeed(config.seed)
 end
+
+
+if config.lm_weight > 0 and config.lm_path:len() > 0 then
+    --    os.execute('./compile_lm.sh')
+    require "lua_lm"
+    config['lm'] = create_lm_instance(config.lm_path)
+end
+
 
 local function accTime()
     local total = {}
@@ -133,7 +148,9 @@ local _, test = data.loadCorpus{config = config, testsets = {config.dataset}}
 local dataset = test[config.dataset]
 
 local model
-if config.model ~= '' then
+if config.model == 'npmt' then
+    model = mutils.loadModel(config.path, config.model)
+elseif config.model ~= '' then
     model = mutils.loadLegacyModel(config.path, config.model)
 else
     model = require(
@@ -203,6 +220,7 @@ local addBleu = accBleu(config.beam, dict)
 local addTime = accTime()
 local timer = torch.Timer()
 local nsents, ntoks, nbatch = 0, 0, 0
+local total_count, total_segments, num_counts, num_segments = 0, 0, 0, 0
 local state = {}
 for samples in dataset() do
     if (nbatch % nparts == partidx - 1) then
@@ -210,7 +228,14 @@ for samples in dataset() do
         state.samples = samples
         computeSampleStats(state)
         local sample = state.samples[1]
-        local hypos, scores, attns, t = model:generate(config, sample, searchf)
+        local hypos, scores, attns, t
+        if config.model == 'npmt' then
+            hypos, scores, attns, t, num_counts, num_segments = model:generate(config, sample, searchf)
+            total_count = total_count + num_counts
+            total_segments = total_segments + num_segments
+        else
+            hypos, scores, attns, t = model:generate(config, sample, searchf)
+        end
         nsents = nsents + sample.bsz
         ntoks = ntoks + sample.ntokens
         addTime(t)
@@ -226,6 +251,9 @@ for samples in dataset() do
         end
     end
     nbatch = nbatch + 1
+end
+if num_segments > 0 then
+    print(string.format("avg. phrase size %f", total_count / total_segments))
 end
 
 -- report overall stats
