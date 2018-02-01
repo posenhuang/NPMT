@@ -137,7 +137,7 @@ $ fairseq train -sourcelang en -targetlang de -datadir data-bin/iwslt14.tokenize
   -max_segment_len 6 -rnn_mode GRU -group_size 500 -use_resnet_enc -use_resnet_dec \
   -log -momentum 0.99 -clip 10 -maxbatch 800 -bptt 0 -maxepoch 100 -ndatathreads 4 \
   -seed 1002 -maxsourcelen 75 -num_lower_win_layers 1 -save_interval 250 -use_accel \
-  -noearlystop -validbleu -lrshrink 1.25 -minepochtoaneal 15 \
+  -noearlystop -validbleu -lrshrink 1.25 -minepochtoanneal 15 \
   -annealing_type slow -savedir trainings/iwslt_en_de
   
 # NPMT model (IWSLT EN-VI)
