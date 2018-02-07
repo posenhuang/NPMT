@@ -1,7 +1,7 @@
 # Introduction
-This is NPMT, the source codes of [Towards Nerual Phrase-based Machine Translation](https://arxiv.org/abs/1706.05565) and [Sequence Modeling via Segmentations](https://arxiv.org/abs/1702.07463) from Microsoft Research.
+This is NPMT, the source codes of [Towards Neural Phrase-based Machine Translation](https://arxiv.org/abs/1706.05565) and [Sequence Modeling via Segmentations](https://arxiv.org/abs/1702.07463) from Microsoft Research.
 It is built on top of the [fairseq toolkit](https://github.com/facebookresearch/fairseq) in [Torch](http://torch.ch/).
-We present the setup and Neural Machine Translation (NMT) experiments in [Towards Nerual Phrase-based Machine Translation](https://arxiv.org/abs/1706.05565).
+We present the setup and Neural Machine Translation (NMT) experiments in [Towards Neural Phrase-based Machine Translation](https://arxiv.org/abs/1706.05565).
 
 ## NPMT 
 Neural Phrase-based Machine Translation (NPMT) explicitly models the phrase structures in output sequences using Sleep-WAke Networks (SWAN), a recently proposed segmentation-based sequence modeling method. 
