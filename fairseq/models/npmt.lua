@@ -297,7 +297,7 @@ function NPMT:compute_logpy(hidden_inputs, xlength, yref, ylength, batch_size, T
           t_valid:copy(ylength:ge(j)) -- a 0/1 vector of length batch_size
           -- Use gather to fetch the corresponding values in the yref
           t_vec:add(t_vec_whole[{{}, j-j_start+1}])
-          -- when j = j_start-1, this j-j_start+2 is 1, which is the first index, in WASM,
+          -- when j = j_start-1, this j-j_start+2 is 1, which is the first index, in NPMT,
           -- index 1 is for empty segment (segment length 0) while in segment.lua, index 1 is for
           -- segment length 1. So they differ by shifting 1 index.
           -- If non-empty, add end_symbol + t_vec; else add end_symbol
