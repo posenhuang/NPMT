@@ -249,7 +249,7 @@ top-most hidden states.
 
 NPMTModel.makeDecoder = argcheck{
     doc=[[
-    Constructs a WASM.
+    Constructs a NPMT.
     ]],
     {name='self', type='NPMTModel'},
     {name='config', type='table'},
