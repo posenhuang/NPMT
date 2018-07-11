@@ -231,7 +231,6 @@ for sample in dataset() do
     sample.bsz = 1
     local hypos, scores, attns, t, num_counts, num_segments
     if config.model == 'npmt' then
-        -- TODO fetch reordering layer weights
         config.verbose = true
         hypos, scores, attns, t, num_counts, num_segments = model:generate(config, sample, searchf)
         print(string.format("avg. phrase size %f", num_counts / num_segments))
