@@ -227,10 +227,6 @@ top-most hidden states.
         if config.dropout_hid > 0 then
             joinedOutput = nn.Dropout(config.dropout_hid)(joinedOutput)
         end
-
-        -- TODO add attention layer     
-
-        -- TODO add temporal conv stride to reduced computations
         if config.num_high_conv_layers > 0 then
             local conv_embed = nn.Sequential()
             conv_embed:add(nn.Padding(2, 1-config.conv_kW_size))-- pad left with zeros
@@ -483,7 +479,7 @@ Sentence generation. See search.lua for a description of search functions.
         table.insert(results, times)
         table.insert(results, output_count)
         table.insert(results, num_segments)
-        -- TODO expect hypos, scores, attns, t
+        -- expect hypos, scores, attns, t
         return table.unpack(results)
     end
 }
@@ -544,7 +540,6 @@ NPMTModel.generationDecode = argcheck{
 
         local npmt = mutils.findAnnotatedNode(m, 'npmt')
         assert(npmt ~= nil)
-        -- TODO add more parameters for beam search
         config.beam_size = config.beam
         config.word_weight = config.lenpen
         return function(state, targetIn)

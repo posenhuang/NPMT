@@ -130,12 +130,6 @@ cmd:option('-reset_lrate', false, 'True reset learning rate after reloading')
 cmd:option('-use_nnlm', false, 'True use a separated RNN')
 
 
-
---chowang: we don't need the following anymore?
---cmd:option('-unk_symbol', 1, 'unk symbol id')
---cmd:option('-start_symbol', 2, 'start symbol id')
---cmd:option('-end_symbol', 3, 'end symbol id')
-
 local config = cmd:parse(arg)
 
 if config.dropout_src < 0 then config.dropout_src = config.dropout end
@@ -473,7 +467,6 @@ else
 end
 
 local function runFinalEval()
-    -- TODO
     local checkpoint_paths = {'model_best.th7', 'model_bestbleu.th7'}
     for icheckpoint_path = 1, #checkpoint_paths  do
         print('checkpoint', checkpoint_paths[icheckpoint_path])

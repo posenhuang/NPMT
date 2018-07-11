@@ -33,7 +33,7 @@ function NPMT:__init(configs)
   if self.use_cimpl then
     require "libdp_lib"
   end
-  if self.use_accel then -- TODO
+  if self.use_accel then
     print('Use CUDA accel')
     require "libcompute_logpy_lib"
   end
@@ -728,7 +728,6 @@ function NPMT:SelectRememberRNNStates(rnns, new_ht_idx)
       end
     end
   else
-    --TODO fix lstm on cpu
     ht = rnns[1]._output[1]:view(-1, self.dec_unit_size)
                            :index(1, torch.LongTensor(new_ht_idx))
                            :view(#new_ht_idx, self.dec_unit_size)
@@ -761,7 +760,6 @@ function NPMT:rememberRNNStates(rnns)
       end
     end
   else
-    --TODO fix lstm on cpu
     ht = rnns[1]._output[1]:clone()
     for i = 1, #rnns do --remember old states
       rnns[i].h0 = rnns[i]._output[1]:clone()
@@ -860,11 +858,9 @@ function NPMT:clearState()
 end
 
 function NPMT:predict(input, xlength, test_mode)
-  -- TODO fixes
   local batch_size, T1 = input:size(1), input:size(2)
---  assert(batch_size == 1)
   local max_segment_len = self.max_segment_len
-  local sts_input = torch.Tensor()--:fill(self.start_symbol)
+  local sts_input = torch.Tensor()
   if (self.use_cuda) then
     sts_input = sts_input:cuda()
   end
